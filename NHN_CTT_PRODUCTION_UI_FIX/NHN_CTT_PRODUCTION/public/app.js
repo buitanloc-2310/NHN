@@ -24,10 +24,11 @@ async function api(url,o={}){
     opt.body=JSON.stringify(o.body);
   }
 
-  let r=await fetch(url,opt);
-  let d=await r.json().catch(()=>({}));
+  const r=await fetch(url,opt);
+  const d=await r.json().catch(()=>({}));
 
   if(!r.ok) throw new Error(d.error||"REQUEST_FAILED");
+
   return d;
 }
 
@@ -42,13 +43,6 @@ modalEl.onclick=e=>{
   if(e.target===modalEl) closeModal();
 };
 
-function toast(msg){
-  const t=document.getElementById("toast");
-  t.textContent=msg;
-  t.classList.add("show");
-  setTimeout(()=>t.classList.remove("show"),2500);
-}
-
 function card(x){
   return `
     <article class="card">
@@ -59,184 +53,14 @@ function card(x){
   `;
 }
 
-function fmt(v){
-  if(v===null||v===undefined||v==="") return "—";
-  return E(v);
-}
-
-function table(headers,rows){
-  return `
-    <div style="overflow:auto">
-      <table class="admin-table">
-        <thead>
-          <tr>
-            ${headers.map(h=>`<th>${E(h)}</th>`).join("")}
-          </tr>
-        </thead>
-        <tbody>
-          ${rows.join("")}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-
 /* =========================
-   ADMIN LAYOUT
-========================= */
-
-function adminShell(title,body){
-  return `
-    <section class="section admin-shell">
-
-      <div class="admin-top">
-        <div>
-          <div class="eyebrow">NHÀ HÁN NGỮ · QUẢN TRỊ</div>
-          <h1>${E(title)}</h1>
-        </div>
-
-        <button class="secondary" onclick="adminLogout()">
-          Đăng xuất
-        </button>
-      </div>
-
-      <div class="admin-layout">
-
-        <aside class="admin-nav">
-
-          <a href="#admin/dashboard">Tổng quan</a>
-
-          <a href="#admin/submissions">
-            Hồ sơ đăng ký
-          </a>
-
-          <a href="#admin/users">
-            Tài khoản & phân quyền
-          </a>
-
-          <a href="#admin/people">
-            Nhân sự
-          </a>
-
-          <a href="#admin/forms">
-            Biểu mẫu
-          </a>
-
-          <a href="#admin/news">
-            Bảng tin
-          </a>
-
-          <a href="#admin/events">
-            Sự kiện
-          </a>
-
-          <a href="#admin/classes">
-            Lớp học
-          </a>
-
-          <a href="#admin/units">
-            Đơn vị
-          </a>
-
-          <a href="#admin/documents">
-            Văn bản
-          </a>
-
-          <a href="#admin/tasks">
-            Công việc
-          </a>
-
-          <a href="#admin/certificates">
-            GCN / GXN
-          </a>
-
-          <a href="#admin/approvals">
-            Phê duyệt
-          </a>
-
-          <a href="#admin/tickets">
-            Hỗ trợ
-          </a>
-
-          <a href="#admin/files">
-            Tệp tin
-          </a>
-
-          <a href="#admin/email">
-            Email
-          </a>
-
-          <a href="#admin/audit">
-            Nhật ký hệ thống
-          </a>
-
-          <a href="#admin/modules">
-            Modules
-          </a>
-
-          <a href="#admin/settings">
-            Cài đặt
-          </a>
-
-          <a href="#admin/backups">
-            Sao lưu
-          </a>
-
-        </aside>
-
-        <div class="admin-content">
-          ${body}
-        </div>
-
-      </div>
-
-    </section>
-  `;
-}
-
-async function requireAdmin(){
-  try{
-    const d=await api("/api/auth/me");
-    state.user=d.user;
-
-    if(!state.user){
-      login();
-      return false;
-    }
-
-    accountBtn.textContent=
-      state.user.full_name||
-      state.user.email||
-      "Tài khoản";
-
-    return true;
-
-  }catch{
-    login();
-    return false;
-  }
-}
-
-window.adminLogout=async()=>{
-  try{
-    await api("/api/auth/logout",{method:"POST"});
-  }catch{}
-
-  state.user=null;
-  location.hash="home";
-  location.reload();
-};
-
-/* =========================
-   PUBLIC HOME
+   TRANG CHỦ
 ========================= */
 
 async function home(){
 
-  let [n,e]=await Promise.all([
-    api("/api/public/news").catch(()=>({items:[]})),
-    api("/api/public/events").catch(()=>({items:[]}))
-  ]);
+  const n=await api("/api/public/news")
+    .catch(()=>({items:[]}));
 
   app.innerHTML=`
     <section class="hero">
@@ -287,32 +111,22 @@ async function home(){
 
         <div class="card">
           <h3>Hoạt động & Sự kiện</h3>
-          <p>
-            Theo dõi chương trình và đăng ký tham gia.
-          </p>
+          <p>Theo dõi chương trình và đăng ký tham gia.</p>
         </div>
 
         <div class="card">
           <h3>Tra cứu GCN</h3>
-          <p>
-            Xác thực giấy chứng nhận bằng mã phát hành.
-          </p>
+          <p>Xác thực giấy chứng nhận bằng mã phát hành.</p>
         </div>
 
         <div class="card">
           <h3>Bảng tin</h3>
-          <p>
-            Cập nhật thông báo, nội dung
-            và hoạt động cộng đồng.
-          </p>
+          <p>Cập nhật thông báo và hoạt động cộng đồng.</p>
         </div>
 
         <div class="card">
           <h3>Tham gia Nhà Hán Ngữ</h3>
-          <p>
-            Đăng ký thành viên, cộng tác viên
-            hoặc gửi yêu cầu hỗ trợ.
-          </p>
+          <p>Đăng ký thành viên, cộng tác viên hoặc hỗ trợ.</p>
         </div>
 
       </div>
@@ -324,13 +138,11 @@ async function home(){
       <h2>Bảng tin mới</h2>
 
       <div class="grid">
-
         ${
           n.items.slice(0,3).map(card).join("")
           ||
           '<div class="card">Chưa có bản tin.</div>'
         }
-
       </div>
 
     </section>
@@ -338,12 +150,13 @@ async function home(){
 }
 
 /* =========================
-   PUBLIC ACTIVITIES
+   HOẠT ĐỘNG
 ========================= */
 
 async function activities(){
 
-  let d=await api("/api/public/events");
+  const d=await api("/api/public/events")
+    .catch(()=>({items:[]}));
 
   app.innerHTML=`
     <section class="section">
@@ -394,12 +207,13 @@ async function activities(){
 }
 
 /* =========================
-   PUBLIC NEWS
+   BẢNG TIN
 ========================= */
 
 async function news(){
 
-  let d=await api("/api/public/news");
+  const d=await api("/api/public/news")
+    .catch(()=>({items:[]}));
 
   app.innerHTML=`
     <section class="section">
@@ -421,7 +235,7 @@ async function news(){
 }
 
 /* =========================
-   LOOKUP
+   TRA CỨU
 ========================= */
 
 function lookup(){
@@ -437,7 +251,7 @@ function lookup(){
 
           <h2>Giấy chứng nhận</h2>
 
-          <form id="cert">
+          <form id="certForm">
 
             <div class="field">
 
@@ -445,7 +259,6 @@ function lookup(){
 
               <input
                 name="code"
-                placeholder="NHN-GCN-2026-0001"
                 required
               >
 
@@ -463,7 +276,7 @@ function lookup(){
 
           <h2>Hồ sơ đăng ký</h2>
 
-          <form id="sub">
+          <form id="subForm">
 
             <div class="field">
 
@@ -501,22 +314,22 @@ function lookup(){
     </section>
   `;
 
-  cert.onsubmit=async e=>{
+  document.getElementById("certForm").onsubmit=async e=>{
 
     e.preventDefault();
 
-    let f=new FormData(e.target);
+    const f=new FormData(e.target);
 
     try{
 
-      let d=await api(
+      const d=await api(
         "/api/lookup/certificate?code="+
         encodeURIComponent(f.get("code"))
       );
 
-      let c=d.item;
+      const c=d.item;
 
-      cr.innerHTML=`
+      document.getElementById("cr").innerHTML=`
         <div class="notice good">
 
           <b>${E(c.code)}</b><br>
@@ -534,7 +347,7 @@ function lookup(){
 
     }catch{
 
-      cr.innerHTML=`
+      document.getElementById("cr").innerHTML=`
         <div class="notice bad">
           Không tìm thấy Giấy chứng nhận.
         </div>
@@ -542,15 +355,15 @@ function lookup(){
     }
   };
 
-  sub.onsubmit=async e=>{
+  document.getElementById("subForm").onsubmit=async e=>{
 
     e.preventDefault();
 
-    let f=new FormData(e.target);
+    const f=new FormData(e.target);
 
     try{
 
-      let d=await api(
+      const d=await api(
         `/api/lookup/submission?code=${
           encodeURIComponent(f.get("code"))
         }&email=${
@@ -558,7 +371,7 @@ function lookup(){
         }`
       );
 
-      sr.innerHTML=`
+      document.getElementById("sr").innerHTML=`
         <div class="notice good">
 
           <b>${E(d.item.code)}</b><br>
@@ -571,7 +384,7 @@ function lookup(){
 
     }catch{
 
-      sr.innerHTML=`
+      document.getElementById("sr").innerHTML=`
         <div class="notice bad">
           Không tìm thấy hồ sơ.
         </div>
@@ -581,12 +394,12 @@ function lookup(){
 }
 
 /* =========================
-   PARTICIPATE
+   THAM GIA
 ========================= */
 
 async function participate(){
 
-  let d=state.config?.forms||[];
+  const d=state.config?.forms||[];
 
   app.innerHTML=`
     <section class="section">
@@ -601,9 +414,7 @@ async function participate(){
 
               <h3>${E(f.name)}</h3>
 
-              <p>
-                ${E(f.description)}
-              </p>
+              <p>${E(f.description)}</p>
 
               <a
                 class="btn"
@@ -623,16 +434,16 @@ async function participate(){
 }
 
 /* =========================
-   DYNAMIC FORM
+   BIỂU MẪU
 ========================= */
 
 async function form(id){
 
-  let d=await api(
+  const d=await api(
     "/api/forms/"+encodeURIComponent(id)
   );
 
-  let c=d.form.config;
+  const c=d.form.config;
 
   app.innerHTML=`
     <section class="form-wrap">
@@ -641,45 +452,45 @@ async function form(id){
 
       <p>${E(c.description)}</p>
 
-      <form id="dyn">
+      <form id="dynForm">
 
         ${
           c.sections.map(s=>`
-
             <div class="card">
 
               <h2>${E(s.title)}</h2>
 
               ${
-                s.fields.map(f=>field(f)).join("")
+                s.fields.map(field).join("")
               }
 
             </div>
-
           `).join("")
         }
 
-        <button>Gửi hồ sơ</button>
+        <button>
+          Gửi hồ sơ
+        </button>
 
       </form>
 
     </section>
   `;
 
-  dyn.onsubmit=async e=>{
+  document.getElementById("dynForm").onsubmit=async e=>{
 
     e.preventDefault();
 
-    let fd=new FormData(e.target);
-    let answers={};
+    const fd=new FormData(e.target);
+    const answers={};
 
-    for(let [k,v] of fd){
+    for(const [k,v] of fd){
       answers[k]=v==="on"?true:v;
     }
 
     try{
 
-      let r=await api(
+      const r=await api(
         `/api/forms/${encodeURIComponent(id)}/submit`,
         {
           method:"POST",
@@ -701,6 +512,7 @@ async function form(id){
       `;
 
     }catch(err){
+
       alert(err.message);
     }
   };
@@ -711,14 +523,11 @@ function field(f){
   if(f.type==="textarea"){
     return `
       <div class="field">
-
         <label>${E(f.label)}</label>
-
         <textarea
           name="${E(f.key)}"
           ${f.required?"required":""}
         ></textarea>
-
       </div>
     `;
   }
@@ -739,9 +548,11 @@ function field(f){
           </option>
 
           ${
-            (f.options||[]).map(x=>`
+            (f.options||[])
+            .map(x=>`
               <option>${E(x)}</option>
-            `).join("")
+            `)
+            .join("")
           }
 
         </select>
@@ -807,7 +618,7 @@ function login(){
       Đăng nhập Nhà Hán Ngữ
     </h2>
 
-    <form id="lf">
+    <form id="loginForm">
 
       <div class="field">
 
@@ -833,20 +644,22 @@ function login(){
 
       </div>
 
-      <button>Đăng nhập</button>
+      <button>
+        Đăng nhập
+      </button>
 
     </form>
   `);
 
-  lf.onsubmit=async e=>{
+  document.getElementById("loginForm").onsubmit=async e=>{
 
     e.preventDefault();
 
-    let f=new FormData(e.target);
+    const f=new FormData(e.target);
 
     try{
 
-      let d=await api(
+      const d=await api(
         "/api/auth/login",
         {
           method:"POST",
@@ -864,8 +677,9 @@ function login(){
 
       location.hash="admin/dashboard";
 
-    }catch(x){
-      alert(x.message);
+    }catch(err){
+
+      alert(err.message);
     }
   };
 }
@@ -879,15 +693,195 @@ accountBtn.onclick=()=>{
 };
 
 /* =========================
-   ADMIN DASHBOARD
+   ADMIN MENU
 ========================= */
 
-async function adminDashboard(){
+function adminNav(){
 
-  let d=await api("/api/admin/dashboard");
-  let c=d.counts||{};
+  return `
+    <aside class="admin-nav">
 
-  const metrics=[
+      <a href="#admin/dashboard">
+        Tổng quan
+      </a>
+
+      <a href="#admin/submissions">
+        Hồ sơ đăng ký
+      </a>
+
+      <a href="#admin/users">
+        Tài khoản
+      </a>
+
+      <a href="#admin/people">
+        Nhân sự
+      </a>
+
+      <a href="#admin/forms">
+        Biểu mẫu
+      </a>
+
+      <a href="#admin/news">
+        Bảng tin
+      </a>
+
+      <a href="#admin/events">
+        Sự kiện
+      </a>
+
+      <a href="#admin/classes">
+        Lớp học
+      </a>
+
+      <a href="#admin/units">
+        Đơn vị
+      </a>
+
+      <a href="#admin/documents">
+        Văn bản
+      </a>
+
+      <a href="#admin/tasks">
+        Công việc
+      </a>
+
+      <a href="#admin/certificates">
+        GCN / GXN
+      </a>
+
+      <a href="#admin/approvals">
+        Phê duyệt
+      </a>
+
+      <a href="#admin/tickets">
+        Hỗ trợ
+      </a>
+
+      <a href="#admin/files">
+        Tệp tin
+      </a>
+
+      <a href="#admin/audit">
+        Nhật ký
+      </a>
+
+      <a href="#admin/backups">
+        Sao lưu
+      </a>
+
+    </aside>
+  `;
+}
+
+function adminPage(title,body){
+
+  app.innerHTML=`
+    <section class="section admin-shell">
+
+      <div class="admin-top">
+
+        <div>
+
+          <div class="eyebrow">
+            NHÀ HÁN NGỮ · QUẢN TRỊ
+          </div>
+
+          <h1>${E(title)}</h1>
+
+        </div>
+
+        <button
+          id="logoutBtn"
+          class="secondary"
+        >
+          Đăng xuất
+        </button>
+
+      </div>
+
+      <div class="admin-layout">
+
+        ${adminNav()}
+
+        <div class="admin-content">
+          ${body}
+        </div>
+
+      </div>
+
+    </section>
+  `;
+
+  document.getElementById("logoutBtn")
+    .onclick=logout;
+}
+
+async function logout(){
+
+  try{
+    await api(
+      "/api/auth/logout",
+      {method:"POST"}
+    );
+  }catch{}
+
+  state.user=null;
+
+  location.hash="home";
+
+  location.reload();
+}
+
+/* =========================
+   ADMIN TABLE
+========================= */
+
+function table(headers,rows){
+
+  return `
+    <div style="overflow:auto">
+
+      <table class="admin-table">
+
+        <thead>
+
+          <tr>
+            ${
+              headers.map(x=>`
+                <th>${E(x)}</th>
+              `).join("")
+            }
+          </tr>
+
+        </thead>
+
+        <tbody>
+          ${rows.join("")}
+        </tbody>
+
+      </table>
+
+    </div>
+  `;
+}
+
+function td(v){
+  return `<td>${E(v??"—")}</td>`;
+}
+
+/* =========================
+   DASHBOARD
+========================= */
+
+async function dashboard(){
+
+  const d=await api(
+    "/api/admin/dashboard"
+  );
+
+  const c=d.counts||{};
+
+  const items=[
     ["Hồ sơ",c.submissions],
     ["Đang xử lý",c.pending],
     ["Nhân sự",c.people],
@@ -897,21 +891,21 @@ async function adminDashboard(){
     ["Công việc",c.tasks]
   ];
 
-  app.innerHTML=adminShell(
+  adminPage(
     "Tổng quan",
     `
       <div class="grid">
 
         ${
-          metrics.map(x=>`
+          items.map(([name,value])=>`
             <div class="card">
 
               <span class="pill">
-                ${E(x[0])}
+                ${E(name)}
               </span>
 
               <h2 style="font-size:2rem">
-                ${fmt(x[1]||0)}
+                ${Number(value||0)}
               </h2>
 
             </div>
@@ -919,243 +913,113 @@ async function adminDashboard(){
         }
 
       </div>
-
-      <div class="card">
-
-        <h2>Truy cập nhanh</h2>
-
-        <div class="actions">
-
-          <a
-            class="btn"
-            href="#admin/submissions"
-          >
-            Hồ sơ
-          </a>
-
-          <a
-            class="btn secondary"
-            href="#admin/users"
-          >
-            Tài khoản
-          </a>
-
-          <a
-            class="btn secondary"
-            href="#admin/certificates"
-          >
-            GCN/GXN
-          </a>
-
-          <a
-            class="btn secondary"
-            href="#admin/approvals"
-          >
-            Phê duyệt
-          </a>
-
-        </div>
-
-      </div>
     `
   );
 }
 
 /* =========================
-   SUBMISSIONS
+   GENERIC LIST
 ========================= */
 
-async function adminSubmissions(){
+async function listPage(
+  title,
+  url,
+  headers,
+  keys
+){
 
-  let d=await api("/api/admin/submissions");
+  const d=await api(url);
 
-  app.innerHTML=adminShell(
+  adminPage(
+    title,
+    table(
+      headers,
+      (d.items||[]).map(x=>`
+        <tr>
+          ${
+            keys.map(k=>td(x[k]))
+            .join("")
+          }
+        </tr>
+      `)
+    )
+  );
+}
+
+/* =========================
+   HỒ SƠ
+========================= */
+
+async function submissions(){
+
+  const d=await api(
+    "/api/admin/submissions"
+  );
+
+  adminPage(
     "Hồ sơ đăng ký",
-    `
-      <div class="card">
+    table(
+      [
+        "Mã",
+        "Biểu mẫu",
+        "Họ tên",
+        "Email",
+        "Trạng thái",
+        "Điểm"
+      ],
+      (d.items||[]).map(x=>`
+        <tr>
 
-        <div class="field">
+          <td>
+            <a
+              href="#admin/submission/${
+                encodeURIComponent(x.code)
+              }"
+            >
+              ${E(x.code)}
+            </a>
+          </td>
 
-          <label>Tìm hồ sơ</label>
+          ${td(x.form_id)}
+          ${td(x.full_name)}
+          ${td(x.email)}
+          ${td(x.status)}
+          ${td(x.score)}
 
-          <input
-            id="sq"
-            placeholder="Mã hồ sơ, họ tên hoặc email"
-          >
-
-        </div>
-
-        <button id="sbtn">
-          Tìm
-        </button>
-
-      </div>
-
-      <div id="stable">
-        ${submissionTable(d.items)}
-      </div>
-    `
-  );
-
-  sbtn.onclick=async()=>{
-
-    let q=sq.value.trim();
-
-    let r=await api(
-      "/api/admin/submissions?q="+
-      encodeURIComponent(q)
-    );
-
-    stable.innerHTML=
-      submissionTable(r.items);
-  };
-}
-
-function submissionTable(items){
-
-  return table(
-    [
-      "Mã",
-      "Biểu mẫu",
-      "Họ tên",
-      "Email",
-      "Trạng thái",
-      "Điểm",
-      "Cập nhật"
-    ],
-    items.map(x=>`
-      <tr>
-
-        <td>
-          <a href="#admin/submission/${
-            encodeURIComponent(x.code)
-          }">
-            ${E(x.code)}
-          </a>
-        </td>
-
-        <td>${fmt(x.form_id)}</td>
-
-        <td>${fmt(x.full_name)}</td>
-
-        <td>${fmt(x.email)}</td>
-
-        <td>${fmt(x.status)}</td>
-
-        <td>${fmt(x.score)}</td>
-
-        <td>${fmt(x.updated_at)}</td>
-
-      </tr>
-    `)
+        </tr>
+      `)
+    )
   );
 }
 
-async function adminSubmission(code){
+async function submission(code){
 
-  let d=await api(
+  const d=await api(
     "/api/admin/submissions/"+
     encodeURIComponent(code)
   );
 
-  let x=d.item;
+  const x=d.item||{};
 
-  let answers=Object.entries(
-    x.answers||{}
-  ).map(([k,v])=>`
-
-    <tr>
-
-      <th>${E(k)}</th>
-
-      <td>
-        ${
-          E(
-            typeof v==="object"
-            ?JSON.stringify(v)
-            :v
-          )
-        }
-      </td>
-
-    </tr>
-
-  `).join("");
-
-  app.innerHTML=adminShell(
+  adminPage(
     "Chi tiết hồ sơ",
     `
       <div class="card">
 
-        <h2>${E(x.code)}</h2>
+        <h2>
+          ${E(x.code||"")}
+        </h2>
 
         <p>
-          <b>${fmt(x.full_name)}</b>
+          <b>${E(x.full_name||"")}</b>
           ·
-          ${fmt(x.email)}
+          ${E(x.email||"")}
         </p>
 
         <p>
-          Biểu mẫu:
-          ${fmt(x.form_id)}
+          Trạng thái:
+          ${E(x.status||"")}
         </p>
-
-      </div>
-
-      <div class="card">
-
-        <h2>Cập nhật xử lý</h2>
-
-        <form id="sf">
-
-          <div class="field">
-
-            <label>Trạng thái</label>
-
-            <input
-              name="status"
-              value="${E(x.status||"")}"
-            >
-
-          </div>
-
-          <div class="field">
-
-            <label>Phân công</label>
-
-            <input
-              name="assigned_to"
-              value="${E(x.assigned_to||"")}"
-            >
-
-          </div>
-
-          <div class="field">
-
-            <label>Điểm</label>
-
-            <input
-              name="score"
-              value="${E(x.score||"")}"
-            >
-
-          </div>
-
-          <div class="field">
-
-            <label>Ghi chú nội bộ</label>
-
-            <textarea
-              name="internal_note"
-            >${E(x.internal_note||"")}</textarea>
-
-          </div>
-
-          <button>
-            Lưu thay đổi
-          </button>
-
-        </form>
 
       </div>
 
@@ -1163,493 +1027,518 @@ async function adminSubmission(code){
 
         <h2>Nội dung hồ sơ</h2>
 
-        <div style="overflow:auto">
-
-          <table class="admin-table">
-            <tbody>
-              ${answers}
-            </tbody>
-          </table>
-
-        </div>
-
-      </div>
-    `
-  );
-
-  sf.onsubmit=async e=>{
-
-    e.preventDefault();
-
-    let f=new FormData(e.target);
-
-    await api(
-      "/api/admin/submissions/"+
-      encodeURIComponent(code),
-      {
-        method:"PATCH",
-        body:Object.fromEntries(f)
-      }
-    );
-
-    toast("Đã cập nhật hồ sơ");
-  };
-}
-
-/* =========================
-   USERS
-========================= */
-
-async function adminUsers(){
-
-  let d=await api("/api/admin/users");
-
-  app.innerHTML=adminShell(
-    "Tài khoản & phân quyền",
-    `
-      <div class="card">
-
-        <button id="newUser">
-          Tạo tài khoản
-        </button>
-
-      </div>
-
-      ${
-        table(
-          [
-            "ID",
-            "Họ tên",
-            "Email",
-            "Trạng thái",
-            "Quyền",
-            "2FA"
-          ],
-          d.items.map(x=>`
-
-            <tr>
-
-              <td>${x.id}</td>
-
-              <td>${fmt(x.full_name)}</td>
-
-              <td>${fmt(x.email)}</td>
-
-              <td>${fmt(x.status)}</td>
-
-              <td>
+        ${
+          table(
+            [
+              "Trường",
+              "Nội dung"
+            ],
+            Object.entries(
+              x.answers||{}
+            ).map(([k,v])=>`
+              <tr>
+                ${td(k)}
                 ${
-                  E(
-                    (x.roles||[])
-                    .map(r=>r.role_id)
-                    .join(", ")
-                    ||
-                    "—"
+                  td(
+                    typeof v==="object"
+                    ?JSON.stringify(v)
+                    :v
                   )
                 }
-              </td>
-
-              <td>
-                ${x.totp_enabled?"Bật":"Tắt"}
-              </td>
-
-            </tr>
-
-          `)
-        )
-      }
-    `
-  );
-
-  newUser.onclick=()=>{
-
-    modal(`
-
-      <button onclick="closeModal()">
-        Đóng
-      </button>
-
-      <h2>Tạo tài khoản</h2>
-
-      <form id="nuf">
-
-        <div class="field">
-
-          <label>Họ tên</label>
-
-          <input
-            name="full_name"
-            required
-          >
-
-        </div>
-
-        <div class="field">
-
-          <label>Email</label>
-
-          <input
-            name="email"
-            type="email"
-            required
-          >
-
-        </div>
-
-        <div class="field">
-
-          <label>Role ID</label>
-
-          <input
-            name="role"
-            placeholder="member"
-          >
-
-        </div>
-
-        <button>
-          Tạo tài khoản
-        </button>
-
-      </form>
-    `);
-
-    nuf.onsubmit=async e=>{
-
-      e.preventDefault();
-
-      let f=new FormData(e.target);
-
-      try{
-
-        let d=await api(
-          "/api/admin/users",
-          {
-            method:"POST",
-            body:{
-              full_name:f.get("full_name"),
-              email:f.get("email"),
-              roles:[
-                f.get("role")||"member"
-              ]
-            }
-          }
-        );
-
-        closeModal();
-
-        alert(
-          "Đã tạo tài khoản."
-          +
-          (
-            d.temp_password
-            ?"\nMật khẩu tạm: "+d.temp_password
-            :""
+              </tr>
+            `)
           )
-        );
+        }
 
-        await adminUsers();
-
-      }catch(err){
-        alert(err.message);
-      }
-    };
-  };
-}
-
-/* =========================
-   GENERIC ADMIN LIST
-========================= */
-
-async function adminSimpleList(
-  title,
-  url,
-  cols
-){
-
-  let d=await api(url);
-
-  app.innerHTML=adminShell(
-    title,
-    table(
-      cols.map(c=>c[0]),
-      d.items.map(x=>`
-
-        <tr>
-
-          ${
-            cols.map(c=>`
-              <td>
-                ${fmt(x[c[1]])}
-              </td>
-            `).join("")
-          }
-
-        </tr>
-
-      `)
-    )
-  );
-}
-
-async function adminForms(){
-
-  let d=await api("/api/admin/forms");
-
-  app.innerHTML=adminShell(
-    "Biểu mẫu",
-    table(
-      [
-        "ID",
-        "Tên",
-        "Đối tượng",
-        "Tuổi tối thiểu",
-        "Bật",
-        "Phiên bản",
-        "Email nhận"
-      ],
-      d.items.map(x=>`
-
-        <tr>
-
-          <td>${fmt(x.id)}</td>
-
-          <td>${fmt(x.name)}</td>
-
-          <td>${fmt(x.audience)}</td>
-
-          <td>${fmt(x.min_age)}</td>
-
-          <td>
-            ${x.enabled?"Có":"Không"}
-          </td>
-
-          <td>${fmt(x.version)}</td>
-
-          <td>${fmt(x.recipient_email)}</td>
-
-        </tr>
-
-      `)
-    )
+      </div>
+    `
   );
 }
 
 async function adminContent(
   type,
   title,
-  cols
+  headers,
+  keys
 ){
 
-  let d=await api(
-    "/api/admin/content/"+type
-  );
-
-  app.innerHTML=adminShell(
+  return listPage(
     title,
-    table(
-      cols.map(c=>c[0]),
-      d.items.map(x=>`
-
-        <tr>
-
-          ${
-            cols.map(c=>`
-              <td>
-                ${fmt(x[c[1]])}
-              </td>
-            `).join("")
-          }
-
-        </tr>
-
-      `)
-    )
+    "/api/admin/content/"+type,
+    headers,
+    keys
   );
 }
 
 /* =========================
-   CERTIFICATES
+   ADMIN ROUTER
 ========================= */
 
-async function adminCertificates(){
+async function adminRoute(h){
 
-  let d=await api(
-    "/api/admin/certificates"
-  );
+  const me=await api("/api/auth/me")
+    .catch(()=>({user:null}));
 
-  app.innerHTML=adminShell(
-    "Giấy chứng nhận / Giấy xác nhận",
-    table(
-      [
-        "Mã",
-        "Họ tên",
-        "Loại",
-        "Nội dung",
-        "Trạng thái",
-        "Ngày cấp"
-      ],
-      d.items.map(x=>`
+  state.user=me.user;
 
-        <tr>
+  if(!state.user){
+    login();
+    return;
+  }
 
-          <td>
-            ${fmt(x.code||x.id)}
-          </td>
+  accountBtn.textContent=
+    state.user.full_name
+    ||
+    state.user.email
+    ||
+    "Tài khoản";
 
-          <td>${fmt(x.full_name)}</td>
+  try{
 
-          <td>${fmt(x.cert_type)}</td>
+    if(h==="admin/dashboard"){
+      return dashboard();
+    }
 
-          <td>${fmt(x.content)}</td>
+    if(h==="admin/submissions"){
+      return submissions();
+    }
 
-          <td>${fmt(x.status)}</td>
+    if(h.startsWith("admin/submission/")){
+      return submission(
+        decodeURIComponent(
+          h.slice(17)
+        )
+      );
+    }
 
-          <td>${fmt(x.issued_at)}</td>
+    if(h==="admin/users"){
+      return listPage(
+        "Tài khoản & phân quyền",
+        "/api/admin/users",
+        [
+          "ID",
+          "Họ tên",
+          "Email",
+          "Trạng thái"
+        ],
+        [
+          "id",
+          "full_name",
+          "email",
+          "status"
+        ]
+      );
+    }
 
-        </tr>
+    if(h==="admin/people"){
+      return listPage(
+        "Nhân sự",
+        "/api/admin/people",
+        [
+          "ID",
+          "Họ tên",
+          "Email",
+          "Đơn vị",
+          "Vị trí",
+          "Trạng thái"
+        ],
+        [
+          "id",
+          "full_name",
+          "email",
+          "unit_code",
+          "position",
+          "status"
+        ]
+      );
+    }
 
-      `)
-    )
-  );
+    if(h==="admin/forms"){
+      return listPage(
+        "Biểu mẫu",
+        "/api/admin/forms",
+        [
+          "ID",
+          "Tên",
+          "Đối tượng",
+          "Phiên bản"
+        ],
+        [
+          "id",
+          "name",
+          "audience",
+          "version"
+        ]
+      );
+    }
+
+    if(h==="admin/news"){
+      return adminContent(
+        "news",
+        "Bảng tin",
+        [
+          "Tiêu đề",
+          "Trạng thái",
+          "Ngày đăng"
+        ],
+        [
+          "title",
+          "status",
+          "published_at"
+        ]
+      );
+    }
+
+    if(h==="admin/events"){
+      return adminContent(
+        "events",
+        "Sự kiện",
+        [
+          "Tên",
+          "Bắt đầu",
+          "Trạng thái",
+          "Sức chứa"
+        ],
+        [
+          "title",
+          "start_at",
+          "status",
+          "capacity"
+        ]
+      );
+    }
+
+    if(h==="admin/classes"){
+      return adminContent(
+        "classes",
+        "Lớp học",
+        [
+          "Tên",
+          "Cấp độ",
+          "Trạng thái",
+          "Sức chứa"
+        ],
+        [
+          "title",
+          "level",
+          "status",
+          "capacity"
+        ]
+      );
+    }
+
+    if(h==="admin/units"){
+      return adminContent(
+        "units",
+        "Đơn vị",
+        [
+          "Mã",
+          "Tên",
+          "Loại",
+          "Quản lý",
+          "Trạng thái"
+        ],
+        [
+          "code",
+          "name",
+          "unit_type",
+          "manager_name",
+          "status"
+        ]
+      );
+    }
+
+    if(h==="admin/documents"){
+      return adminContent(
+        "documents",
+        "Văn bản",
+        [
+          "Mã",
+          "Tiêu đề",
+          "Loại",
+          "Trạng thái"
+        ],
+        [
+          "code",
+          "title",
+          "doc_type",
+          "status"
+        ]
+      );
+    }
+
+    if(h==="admin/tasks"){
+      return adminContent(
+        "tasks",
+        "Công việc",
+        [
+          "Tiêu đề",
+          "Phụ trách",
+          "Ưu tiên",
+          "Trạng thái",
+          "Hạn"
+        ],
+        [
+          "title",
+          "assigned_to",
+          "priority",
+          "status",
+          "due_at"
+        ]
+      );
+    }
+
+    if(h==="admin/certificates"){
+      return listPage(
+        "GCN / GXN",
+        "/api/admin/certificates",
+        [
+          "Mã",
+          "Họ tên",
+          "Loại",
+          "Trạng thái",
+          "Ngày cấp"
+        ],
+        [
+          "code",
+          "full_name",
+          "cert_type",
+          "status",
+          "issued_at"
+        ]
+      );
+    }
+
+    if(h==="admin/approvals"){
+      return listPage(
+        "Phê duyệt",
+        "/api/admin/approvals",
+        [
+          "ID",
+          "Đối tượng",
+          "Hành động",
+          "Trạng thái",
+          "Hạn"
+        ],
+        [
+          "id",
+          "entity_type",
+          "action",
+          "status",
+          "due_at"
+        ]
+      );
+    }
+
+    if(h==="admin/tickets"){
+      return listPage(
+        "Hỗ trợ",
+        "/api/admin/tickets",
+        [
+          "Mã",
+          "Chủ đề",
+          "Người gửi",
+          "Ưu tiên",
+          "Trạng thái"
+        ],
+        [
+          "code",
+          "subject",
+          "submitter_name",
+          "priority",
+          "status"
+        ]
+      );
+    }
+
+    if(h==="admin/files"){
+      return listPage(
+        "Tệp tin",
+        "/api/admin/files",
+        [
+          "Tên",
+          "Loại",
+          "Dung lượng",
+          "Quyền xem",
+          "Ngày tải"
+        ],
+        [
+          "filename",
+          "mime",
+          "size",
+          "visibility",
+          "created_at"
+        ]
+      );
+    }
+
+    if(h==="admin/audit"){
+      return listPage(
+        "Nhật ký hệ thống",
+        "/api/admin/audit",
+        [
+          "Tài khoản",
+          "Hành động",
+          "Đối tượng",
+          "Thời gian"
+        ],
+        [
+          "actor_email",
+          "action",
+          "entity_type",
+          "created_at"
+        ]
+      );
+    }
+
+    if(h==="admin/backups"){
+      return listPage(
+        "Sao lưu",
+        "/api/admin/backups",
+        [
+          "ID",
+          "R2 key",
+          "Dung lượng",
+          "Ngày tạo"
+        ],
+        [
+          "id",
+          "r2_key",
+          "size",
+          "created_at"
+        ]
+      );
+    }
+
+    return dashboard();
+
+  }catch(err){
+
+    adminPage(
+      "Không thể tải dữ liệu",
+      `
+        <div class="notice bad">
+
+          <b>
+            ${E(err.message)}
+          </b>
+
+          <p>
+            API hoặc quyền truy cập của mục này đang có lỗi.
+          </p>
+
+        </div>
+      `
+    );
+  }
 }
 
 /* =========================
-   MODULES
+   ROUTER
 ========================= */
 
-async function adminModules(){
+async function route(){
 
-  let d=await api(
-    "/api/admin/modules"
-  );
+  const h=
+    location.hash.slice(1)
+    ||
+    "home";
 
-  app.innerHTML=adminShell(
-    "Modules",
-    table(
-      [
-        "Module",
-        "Tên",
-        "Trạng thái"
-      ],
-      d.items.map(x=>`
+  try{
 
-        <tr>
+    if(h==="home"){
+      return home();
+    }
 
-          <td>${fmt(x.key)}</td>
+    if(h==="activities"){
+      return activities();
+    }
 
-          <td>${fmt(x.name)}</td>
+    if(h==="news"){
+      return news();
+    }
 
-          <td>
-            ${
-              x.enabled
-              ?"Đang bật"
-              :"Đang tắt"
-            }
-          </td>
+    if(h==="lookup"){
+      return lookup();
+    }
 
-        </tr>
+    if(h==="participate"){
+      return participate();
+    }
 
-      `)
-    )
-  );
-}
-/* ==========================================
-   NHÀ HÁN NGỮ — ADMIN DASHBOARD
-========================================== */
+    if(h.startsWith("form/")){
+      return form(
+        decodeURIComponent(
+          h.slice(5)
+        )
+      );
+    }
 
-.admin-top{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:16px;
-  margin-bottom:20px;
-}
+    if(h.startsWith("admin/")){
+      return adminRoute(h);
+    }
 
-.admin-layout{
-  display:grid;
-  grid-template-columns:230px minmax(0,1fr);
-  gap:22px;
-  align-items:start;
-}
+    return home();
 
-.admin-nav{
-  position:sticky;
-  top:90px;
-  display:flex;
-  flex-direction:column;
-  gap:5px;
-  padding:12px;
-  border:1px solid rgba(0,0,0,.09);
-  border-radius:16px;
-  background:#fff;
-}
+  }catch(err){
 
-.admin-nav a{
-  display:block;
-  padding:10px 12px;
-  border-radius:10px;
-  text-decoration:none;
-  color:inherit;
-  font-weight:600;
-}
+    app.innerHTML=`
+      <section class="section">
 
-.admin-nav a:hover{
-  background:rgba(143,16,24,.08);
-  color:#8f1018;
-}
+        <div class="notice bad">
 
-.admin-content{
-  min-width:0;
-}
+          <b>
+            Không thể tải trang.
+          </b>
 
-.admin-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:14px;
-}
+          <p>
+            ${E(err.message)}
+          </p>
 
-.admin-table th,
-.admin-table td{
-  text-align:left;
-  padding:11px 10px;
-  border-bottom:1px solid rgba(0,0,0,.08);
-  vertical-align:top;
-}
+        </div>
 
-.admin-table th{
-  font-weight:700;
-  white-space:nowrap;
-}
-
-.admin-table tr:hover td{
-  background:rgba(0,0,0,.018);
-}
-
-.admin-table code{
-  white-space:pre-wrap;
-  word-break:break-word;
-}
-
-#toast.show{
-  opacity:1;
-  transform:translateY(0);
-}
-
-@media(max-width:850px){
-
-  .admin-layout{
-    grid-template-columns:1fr;
-  }
-
-  .admin-nav{
-    position:static;
-    display:grid;
-    grid-template-columns:
-      repeat(2,minmax(0,1fr));
-  }
-
-  .admin-top{
-    flex-direction:column;
+      </section>
+    `;
   }
 }
+
+/* =========================
+   KHỞI ĐỘNG
+========================= */
+
+async function init(){
+
+  state.config=
+    await api("/api/config")
+    .catch(()=>({
+      forms:[]
+    }));
+
+  const me=
+    await api("/api/auth/me")
+    .catch(()=>({
+      user:null
+    }));
+
+  state.user=
+    me.user||null;
+
+  if(state.user){
+
+    accountBtn.textContent=
+      state.user.full_name
+      ||
+      state.user.email
+      ||
+      "Tài khoản";
+  }
+
+  route();
+}
+
+window.addEventListener(
+  "hashchange",
+  route
+);
+
+init();
