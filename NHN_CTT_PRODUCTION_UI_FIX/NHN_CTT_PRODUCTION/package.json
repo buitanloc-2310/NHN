@@ -1,0 +1,17 @@
+{
+  "name": "nhn-information-portal",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Cổng Thông tin Nhà Hán Ngữ",
+  "scripts": {
+    "dev": "wrangler dev --remote",
+    "deploy": "wrangler deploy",
+    "db:migrate": "wrangler d1 migrations apply DB --remote",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "validate": "node scripts/validate.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.30.0"
+  }
+}

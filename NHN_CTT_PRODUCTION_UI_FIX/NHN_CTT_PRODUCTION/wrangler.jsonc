@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "nhn",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-21",
+  "assets": {"directory":"./public","binding":"ASSETS"},
+  "d1_databases": [{"binding":"DB","database_name":"nhn-app-db","database_id":"REPLACE_WITH_NHN_D1_DATABASE_ID"}],
+  "r2_buckets": [{"binding":"FILES","bucket_name":"nhn-app-files"}],
+  "vars": {
+    "APP_URL":"https://ctt.nhahanngu.io.vn",
+    "MAIL_FROM":"Nhà Hán Ngữ <noreply@nhahanngu.io.vn>",
+    "GOOGLE_CLIENT_ID":"",
+    "GOOGLE_REDIRECT_URI":"https://ctt.nhahanngu.io.vn/api/auth/google/callback",
+    "TURNSTILE_SITE_KEY":""
+  },
+  "triggers":{"crons":["20 2 * * *"]}
+}
