@@ -285,7 +285,7 @@ export async function publicRoute(request,env,url){
       issued_at:row.issued_at||"",
       status:row.status||"",
       status_text:statusText,
-      unit_name:metadata.unit_name||metadata.issuer||"Cộng đồng Nhà Hán Ngữ",
+      unit_name:metadata.unit_name||metadata.issuer||" Nhà Hán Ngữ",
       role:metadata.role||metadata.position||"",
       program:metadata.program||metadata.activity||metadata.event||""
     }});
