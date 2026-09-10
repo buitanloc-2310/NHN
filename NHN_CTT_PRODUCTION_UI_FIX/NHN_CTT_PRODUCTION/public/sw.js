@@ -1,1 +1,0 @@
-const C='nhn-v1';self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(['/','/styles.css','/app.js','/assets/nhn-logo.jpg']))));self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>caches.match(e.request))));
