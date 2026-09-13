@@ -1,0 +1,20 @@
+{
+  "name": "nhn-information-portal",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Cổng Thông tin Nhà Hán Ngữ",
+  "scripts": {
+    "dev": "wrangler dev --remote",
+    "deploy": "wrangler deploy",
+    "db:migrate": "wrangler d1 migrations apply DB --remote",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "validate": "node scripts/validate.mjs",
+    "dev:local": "wrangler dev",
+    "db:status": "wrangler d1 migrations list DB --remote",
+    "db:check:local": "wrangler d1 execute DB --local --command \"SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;\""
+  },
+  "devDependencies": {
+    "wrangler": "^4.30.0"
+  }
+}
