@@ -104,7 +104,7 @@ async function home(){
   ]);
   const heroTitle=String(cfg.hero_title||"Kết nối tri thức. Mở lối tương lai.").trim();
   const heroText=String(cfg.hero_text||"Một không gian số dành cho hoạt động, bảng tin, đăng ký tham gia và xác thực Giấy chứng nhận của Nhà Hán Ngữ.").trim();
-  const heroCover=String(cfg.hero_cover_url||"/assets/nhn-logo-official.jpg").trim()||"/assets/nhn-logo-official.jpg";
+  const heroCover=String(cfg.hero_cover_url||"/assets/nhn-logo-transparent.png").trim()||"/assets/nhn-logo-transparent.png";
 
   app.innerHTML=`<section class="hero">
     <div>
@@ -137,7 +137,7 @@ async function home(){
 
   <section class="section">
     <h2>Bảng tin mới</h2>
-    <div class="grid">${n.items.slice(0,3).map(card).join("")||'<div class="card"><h3>Bản tin Nhà Hán Ngữ</h3><p>Các bài viết mới sẽ được hiển thị tại đây.</p></div>'}</div>
+    <div class="news-grid">${(n.items||[]).slice(0,3).map(newsCard).join("")||'<div class="card"><h3>Bản tin Nhà Hán Ngữ</h3><p>Các bài viết mới sẽ được hiển thị tại đây.</p></div>'}</div>
   </section>
 
   <section class="section soft-section"><h2>${E(cfg.home_join_title||"Cùng học, cùng chia sẻ, cùng phát triển")}</h2><p class="section-intro">${E(cfg.home_join_text||"Nhà Hán Ngữ hướng đến một cộng đồng học tập cởi mở, nơi mỗi người có thể tiếp nhận kiến thức, chia sẻ kinh nghiệm và đóng góp giá trị phù hợp với khả năng của mình.")}</p><div class="actions"><a class="btn" href="#participate">Tham gia Nhà Hán Ngữ</a><a class="btn secondary" href="#support">Gửi hỗ trợ / phản hồi</a></div></section>`;
@@ -193,41 +193,50 @@ async function newsDetail(id){
 
 function lookup(){
   const submissionStatusText=status=>({
-    "Đã tiếp nhận":"Đã tiếp nhận",
-    "Đang xem xét":"Đang xem xét",
-    "Cần bổ sung":"Cần bổ sung thông tin",
-    "Mời phỏng vấn":"Mời phỏng vấn",
-    "Đang đánh giá":"Đang đánh giá",
-    "Đã duyệt":"Đã duyệt",
-    "Không phù hợp":"Không phù hợp",
-    "Hoàn tất":"Hoàn tất"
+    "Đã tiếp nhận":"Đã tiếp nhận","Đang xem xét":"Đang xem xét","Cần bổ sung":"Cần bổ sung thông tin",
+    "Mời phỏng vấn":"Mời phỏng vấn","Đang đánh giá":"Đang đánh giá","Đã duyệt":"Đã duyệt",
+    "Không phù hợp":"Không phù hợp","Hoàn tất":"Hoàn tất"
   }[status]||status||"—");
 
-  app.innerHTML=`<section class="form-wrap">
-    <h1>Tra cứu & Xác thực</h1>
-    <p class="muted">Tra cứu tình trạng hồ sơ hoặc xác thực GCN/GXN do Nhà Hán Ngữ phát hành.</p>
-    <div class="grid">
-      <div class="card">
-        <h2>Xác thực GCN/GXN</h2>
-        <p class="muted">Nhập mã được ghi trên Giấy chứng nhận hoặc Giấy xác nhận.</p>
-        <form id="certLookup">
-          <div class="field"><label>Mã GCN/GXN</label><input name="code" required autocomplete="off" placeholder="001/GCN-NHN/2026"></div>
-          <button>Xác thực</button>
-        </form>
+  app.innerHTML=`<section class="lookup-page">
+    <div class="lookup-hero">
+      <div class="lookup-copy">
+        <div class="eyebrow">NHÀ HÁN NGỮ · HỆ THỐNG XÁC THỰC</div>
+        <h1>Tra cứu & Xác thực</h1>
+        <p>Kiểm tra GCN/GXN và theo dõi hồ sơ đăng ký trực tiếp trên hệ thống Nhà Hán Ngữ.</p>
+        <div class="trust-row"><span>✓ Dữ liệu chính thức</span><span>✓ Tra cứu tức thời</span><span>✓ Bảo vệ thông tin</span></div>
+      </div>
+      <div class="lookup-art" aria-hidden="true">
+        <div class="art-orbit orbit-a"></div><div class="art-orbit orbit-b"></div>
+        <div class="lookup-seal">漢</div><div class="lookup-book">NHN</div>
+        <div class="art-cloud cloud-a">〰</div><div class="art-cloud cloud-b">〰</div>
+      </div>
+    </div>
+
+    <div class="lookup-workspace">
+      <div class="lookup-tabs" role="tablist"><button class="lookup-tab active" data-target="certPanel">Xác thực GCN/GXN</button><button class="lookup-tab" data-target="subPanel">Tra cứu hồ sơ</button></div>
+      <div id="certPanel" class="lookup-panel active">
+        <div class="lookup-panel-copy"><span class="lookup-icon">認</span><div><h2>Xác thực GCN/GXN</h2><p>Nhập chính xác mã được in trên Giấy chứng nhận hoặc Giấy xác nhận.</p></div></div>
+        <form id="certLookup" class="lookup-form"><div class="field"><label>Mã GCN/GXN</label><input name="code" required autocomplete="off" placeholder="Ví dụ: 001/GCN-NHN/2026"></div><button>Xác thực ngay</button></form>
         <div id="certResult"></div>
       </div>
-      <div class="card">
-        <h2>Tra cứu hồ sơ đăng ký</h2>
-        <p class="muted">Nhập mã hồ sơ và email đã sử dụng khi đăng ký.</p>
-        <form id="subLookup">
-          <div class="field"><label>Mã hồ sơ</label><input name="code" required autocomplete="off"></div>
-          <div class="field"><label>Email đã đăng ký</label><input name="email" type="email" required autocomplete="email"></div>
-          <button>Tra cứu hồ sơ</button>
-        </form>
+      <div id="subPanel" class="lookup-panel">
+        <div class="lookup-panel-copy"><span class="lookup-icon">查</span><div><h2>Tra cứu hồ sơ đăng ký</h2><p>Dùng mã hồ sơ và email đã khai khi gửi đăng ký.</p></div></div>
+        <form id="subLookup" class="lookup-form two"><div class="field"><label>Mã hồ sơ</label><input name="code" required autocomplete="off" placeholder="Mã hồ sơ"></div><div class="field"><label>Email đã đăng ký</label><input name="email" type="email" required autocomplete="email" placeholder="email@example.com"></div><button>Tra cứu hồ sơ</button></form>
         <div id="subResult"></div>
       </div>
     </div>
+    <div class="lookup-help"><div><b>Không tìm thấy kết quả?</b><span>Kiểm tra lại mã hoặc liên hệ Nhà Hán Ngữ để được hỗ trợ.</span></div><a class="btn secondary" href="#support">Trung tâm hỗ trợ</a></div>
   </section>`;
+
+  document.querySelectorAll('.lookup-tab').forEach(btn=>btn.onclick=()=>{
+    document.querySelectorAll('.lookup-tab').forEach(x=>x.classList.toggle('active',x===btn));
+    document.querySelectorAll('.lookup-panel').forEach(x=>x.classList.toggle('active',x.id===btn.dataset.target));
+  });
+  const certLookup=document.getElementById("certLookup");
+  const subLookup=document.getElementById("subLookup");
+  const certResult=document.getElementById("certResult");
+  const subResult=document.getElementById("subResult");
 
   certLookup.onsubmit=async e=>{
     e.preventDefault();
@@ -1198,7 +1207,7 @@ async function settingsPage(){
           <div class="field"><label>Slogan</label><input name="brand_slogan" value="${txt("brand_slogan","Kết nối tri thức • Mở lối tương lai")}"></div>
           <div class="field"><label>Tiêu đề Hero</label><input name="hero_title" value="${txt("hero_title")}"></div>
           <div class="field"><label>Mô tả Hero</label><textarea name="hero_text">${txt("hero_text")}</textarea></div>
-          <div class="field"><label>Ảnh Hero</label><div class="upload-control"><input name="hero_cover_file" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><input name="hero_cover_url" type="hidden" value="${txt("hero_cover_url","/assets/nhn-logo-official.jpg")}">${values.hero_cover_url?`<img class="upload-preview" src="${E(values.hero_cover_url)}" alt="Ảnh Hero hiện tại">`:""}<small>Tải ảnh trực tiếp từ thiết bị. Không cần URL.</small></div></div>
+          <div class="field"><label>Ảnh Hero</label><div class="upload-control"><input name="hero_cover_file" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><input name="hero_cover_url" type="hidden" value="${txt("hero_cover_url","/assets/nhn-logo-transparent.png")}">${values.hero_cover_url?`<img class="upload-preview" src="${E(values.hero_cover_url)}" alt="Ảnh Hero hiện tại">`:""}<small>Tải ảnh trực tiếp từ thiết bị. Không cần URL.</small></div></div>
         </div>
         <div class="card"><h2>Liên hệ & mạng xã hội</h2>
           <div class="field"><label>Email</label><input name="receiver_email" type="email" value="${txt("receiver_email","nhahanngu.vn@gmail.com")}"></div>
@@ -1332,8 +1341,27 @@ async function adminRoute(h){
    ROUTER
 ========================= */
 
+function currentRouteKey(){
+  const hash=location.hash.replace(/^#\/?/,"").trim();
+  if(hash) return hash;
+  const path=location.pathname.replace(/^\/+|\/+$/g,"");
+  if(!path||path==="index.html") return "home";
+  const publicPaths=new Set(["home","activities","news","about","support","lookup","participate"]);
+  if(publicPaths.has(path)||path.startsWith("news/")||path.startsWith("form/")||path.startsWith("admin/")) return path;
+  return "home";
+}
+
+function syncPublicNav(h){
+  document.querySelectorAll('.app-nav a,.mobile-bottom-nav a').forEach(a=>{
+    const key=(a.getAttribute('href')||'').replace(/^#\/?/,'');
+    const active=key && (h===key || (key==='news'&&h.startsWith('news/')) || (key==='participate'&&h.startsWith('form/')));
+    a.classList.toggle('active',!!active);
+  });
+}
+
 async function route(){
-  const h=location.hash.slice(1)||"home";
+  const h=currentRouteKey();
+  syncPublicNav(h);
 
   try{
     if(h==="home") return home();
