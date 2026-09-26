@@ -67,11 +67,16 @@ function fmt(v){
   return E(v);
 }
 
-function card(x){
-  return `<article class="card">
-    <span class="pill">NHÀ HÁN NGỮ</span>
-    <h3>${E(x.title)}</h3>
-    <p style="white-space:pre-line;line-height:1.7">${E(x.body||x.status||"")}</p>
+function fileUrl(id){ return id?`/api/files/${encodeURIComponent(id)}`:""; }
+function excerpt(text,n=150){
+  const clean=String(text||"").replace(/\s+/g," ").trim();
+  return clean.length>n?clean.slice(0,n).trim()+"…":clean;
+}
+function newsCard(x){
+  return `<article class="news-card" data-news-id="${E(x.id)}" tabindex="0">
+    <div class="news-cover">${x.cover_file_id?`<img src="${fileUrl(x.cover_file_id)}" alt="">`:`<div class="news-cover-fallback">NHN</div>`}</div>
+    <div class="news-card-body"><span class="pill">BẢNG TIN</span><h3>${E(x.title)}</h3>
+    <p>${E(excerpt(x.body,155))}</p><div class="news-meta"><span>${E(x.published_at?String(x.published_at).slice(0,10):"Mới cập nhật")}</span><b>Xem chi tiết →</b></div></div>
   </article>`;
 }
 
@@ -165,8 +170,25 @@ async function activities(){
 
 async function news(){
   const d=await api("/api/public/news").catch(()=>({items:[]}));
-  app.innerHTML=`<section class="section"><h1>Bảng tin Nhà Hán Ngữ</h1>
-  <div class="grid">${d.items.map(card).join("")||'<div class="card">Chưa có bản tin.</div>'}</div></section>`;
+  const items=d.items||[];
+  app.innerHTML=`<section class="section app-page">
+    <div class="page-hero compact"><div><div class="eyebrow">NHÀ HÁN NGỮ · CẬP NHẬT</div><h1>Bảng tin</h1><p>Theo dõi thông báo, hoạt động và những câu chuyện mới nhất.</p></div>
+      <div class="app-search"><input id="newsSearch" placeholder="Tìm trong bảng tin…" aria-label="Tìm trong bảng tin"></div></div>
+    <div class="chip-row"><button class="chip active">Tất cả</button><button class="chip">Mới nhất</button><button class="chip">Hoạt động</button><button class="chip">Thông báo</button></div>
+    <div id="newsGrid" class="news-grid">${items.map(newsCard).join("")||'<div class="empty-state">Chưa có bản tin.</div>'}</div>
+  </section>`;
+  const open=id=>location.hash=`news/${encodeURIComponent(id)}`;
+  document.querySelectorAll('.news-card').forEach(el=>{el.onclick=()=>open(el.dataset.newsId);el.onkeydown=e=>{if(e.key==='Enter')open(el.dataset.newsId)}});
+  newsSearch.oninput=()=>{const q=newsSearch.value.toLowerCase().trim();document.querySelectorAll('.news-card').forEach(el=>el.hidden=q&&!el.innerText.toLowerCase().includes(q));};
+}
+async function newsDetail(id){
+  const d=await api("/api/public/news").catch(()=>({items:[]}));
+  const x=(d.items||[]).find(n=>String(n.id)===String(id)||String(n.slug)===String(id));
+  if(!x){app.innerHTML='<section class="section"><div class="empty-state">Không tìm thấy bài viết.</div></section>';return;}
+  app.innerHTML=`<section class="reader-shell"><button class="back-link" onclick="history.back()">← Bảng tin</button>
+    <article class="reader-card">${x.cover_file_id?`<img class="reader-cover" src="${fileUrl(x.cover_file_id)}" alt="">`:''}
+    <div class="reader-content"><span class="pill">BẢNG TIN NHÀ HÁN NGỮ</span><h1>${E(x.title)}</h1><div class="reader-date">${E(x.published_at||'')}</div>
+    <div class="article-body">${String(x.body||'').split(/\n\n+/).filter(Boolean).map(t=>`<p>${E(t)}</p>`).join('')}</div></div></article></section>`;
 }
 
 function lookup(){
@@ -259,17 +281,8 @@ function lookup(){
 
 async function participate(){
   const forms=state.config?.forms||[];
-
-  app.innerHTML=`<section class="section">
-    <h1>Tham gia Nhà Hán Ngữ</h1>
-    <div class="grid">
-      ${forms.map(f=>`<article class="card">
-        <h3>${fmt(f.name)}</h3>
-        <p>${fmt(f.description)}</p>
-        <a class="btn" href="#form/${encodeURIComponent(f.id)}">Mở biểu mẫu</a>
-      </article>`).join("")}
-    </div>
-  </section>`;
+  app.innerHTML=`<section class="section app-page"><div class="page-hero compact"><div><div class="eyebrow">CƠ HỘI · ĐĂNG KÝ</div><h1>Tham gia Nhà Hán Ngữ</h1><p>Khám phá các chương trình và biểu mẫu đang mở. Chọn một mục để xem và gửi hồ sơ ngay trong ứng dụng.</p></div></div>
+    <div class="participate-grid">${forms.map(f=>`<article class="opportunity-card"><div class="opportunity-icon">参</div><span class="status-dot">ĐANG MỞ</span><h3>${fmt(f.name)}</h3><p>${E(excerpt(f.description,145))}</p><div class="opportunity-foot"><span>${f.min_age?`Từ ${E(f.min_age)} tuổi`:'Dành cho cộng đồng'}</span><a class="btn" href="#form/${encodeURIComponent(f.id)}">Tham gia →</a></div></article>`).join("")||'<div class="empty-state">Hiện chưa có chương trình nhận đăng ký.</div>'}</div></section>`;
 }
 
 function field(f){
@@ -416,6 +429,7 @@ function adminNav(){
 }
 
 function adminPage(title,body){
+  const prevScroll=Number(sessionStorage.getItem("nhn_admin_scroll")||0);
   app.innerHTML=`<section class="section admin-shell">
     <div class="admin-top">
       <div><div class="eyebrow">NHÀ HÁN NGỮ · QUẢN TRỊ</div><h1>${E(title)}</h1></div>
@@ -428,7 +442,10 @@ function adminPage(title,body){
   </section>`;
 
   logoutBtn.onclick=logout;
+  const current=location.hash.slice(1); document.querySelectorAll('.admin-nav a').forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+current));
+  requestAnimationFrame(()=>window.scrollTo({top:prevScroll,behavior:'instant'}));
 }
+window.addEventListener('scroll',()=>{if(location.hash.startsWith('#admin/'))sessionStorage.setItem('nhn_admin_scroll',String(window.scrollY));},{passive:true});
 
 async function logout(){
   try{await api("/api/auth/logout",{method:"POST"})}catch{}
@@ -699,7 +716,8 @@ const CRUD={
       ["body","Nội dung","textarea"],
       ["status","Trạng thái","select",["draft","published","archived"]],
       ["published_at","Ngày đăng","datetime-local"],
-      ["tags_json","Tags JSON","text"]
+      ["tags_json","Tags JSON","text"],
+      ["cover_file_id","Ảnh bìa","image-upload"]
     ],
     cols:[["Tiêu đề","title"],["Trạng thái","status"],["Ngày đăng","published_at"]]
   },
@@ -777,6 +795,9 @@ function inputField(def,value=""){
   if(type==="textarea")
     return `<div class="field"><label>${E(label)}</label><textarea name="${E(key)}" style="min-height:${key==="body"?"240px":"140px"};line-height:1.6" ${key==="body"?'placeholder="Mỗi ý có thể xuống dòng riêng để bản tin hiển thị rõ ràng, ngăn nắp."':""}>${E(value||"")}</textarea></div>`;
 
+  if(type==="image-upload")
+    return `<div class="field"><label>${E(label)}</label><div class="upload-control"><input type="file" name="${E(key)}_file" accept="image/jpeg,image/png,image/webp,image/gif"><input type="hidden" name="${E(key)}" value="${E(value||"")}">${value?`<img class="upload-preview" src="${fileUrl(value)}" alt="Ảnh hiện tại">`:""}<small>Chọn ảnh trực tiếp từ thiết bị. Không cần sao chép URL.</small></div></div>`;
+
   if(type==="select")
     return `<div class="field"><label>${E(label)}</label><select name="${E(key)}">
       ${(options||[]).map(x=>`<option value="${E(x)}" ${String(value)===String(x)?"selected":""}>${E(x)}</option>`).join("")}
@@ -829,7 +850,11 @@ window.openCrud=async(type,id="")=>{
     e.preventDefault();
     const f=new FormData(e.target);
     const body=Object.fromEntries(f);
-
+    for(const def of cfg.fields.filter(x=>x[2]==="image-upload")){
+      const key=def[0],file=f.get(key+"_file");
+      if(file&&file.size){const fd=new FormData();fd.append("file",file);fd.append("visibility","public");const up=await api("/api/admin/upload",{method:"POST",body:fd});body[key]=up.id;}
+      delete body[key+"_file"];
+    }
     if(body.capacity!=="") body.capacity=Number(body.capacity);
 
     try{
@@ -889,7 +914,7 @@ async function forms(){
         <td>${fmt(x.audience)}</td>
         <td>${x.enabled?"Có":"Không"}</td>
         <td>${fmt(x.version)}</td>
-        <td><button onclick="editForm('${encodeURIComponent(x.id)}')">Sửa</button></td>
+        <td><button onclick="editForm('${encodeURIComponent(x.id)}')">Sửa</button> <button class="secondary" onclick="duplicateForm('${encodeURIComponent(x.id)}')">Nhân bản</button> <button class="danger" onclick="deleteForm('${encodeURIComponent(x.id)}')">Xóa</button></td>
       </tr>`)
     )}
   `);
@@ -897,43 +922,37 @@ async function forms(){
   newFormBtn.onclick=()=>formEditor();
 }
 
+function normalizeFormConfig(item){
+  const c=structuredClone(item?.config||{name:item?.name||"",description:item?.description||"",sections:[]});
+  c.sections=Array.isArray(c.sections)?c.sections:[]; return c;
+}
 function formEditor(item=null){
-  modal(`<button onclick="closeModal()">Đóng</button>
-    <h2>${item?"Sửa":"Tạo"} biểu mẫu</h2>
-    <form id="adminFormEditor">
-      ${!item?'<div class="field"><label>ID biểu mẫu</label><input name="id" placeholder="member-application"></div>':""}
-      <div class="field"><label>Tên</label><input name="name" value="${E(item?.name||"")}" required></div>
+  const cfg=normalizeFormConfig(item);
+  modal(`<div class="modal-head"><div><div class="eyebrow">FORM BUILDER</div><h2>${item?"Chỉnh sửa":"Tạo"} biểu mẫu</h2></div><button class="secondary" onclick="closeModal()">Đóng</button></div>
+    <form id="adminFormEditor" class="builder-shell">
+      <div class="builder-meta">${!item?'<div class="field"><label>ID biểu mẫu</label><input name="id" placeholder="member-application"></div>':""}
+      <div class="field"><label>Tên biểu mẫu</label><input name="name" value="${E(item?.name||"")}" required></div>
       <div class="field"><label>Prefix mã hồ sơ</label><input name="prefix" value="${E(item?.prefix||"NHN")}" required></div>
-      <div class="field"><label>Mô tả</label><textarea name="description">${E(item?.description||"")}</textarea></div>
+      <div class="field wide"><label>Mô tả</label><textarea name="description">${E(item?.description||"")}</textarea></div>
       <div class="field"><label>Đối tượng</label><input name="audience" value="${E(item?.audience||"public")}"></div>
       <div class="field"><label>Tuổi tối thiểu</label><input name="min_age" type="number" value="${E(item?.min_age||"")}"></div>
-      <div class="field"><label>Email nhận</label><input name="recipient_email" type="email" value="${E(item?.recipient_email||"nhahanngu.vn@gmail.com")}"></div>
-      <div class="field"><label>Cấu hình JSON</label><textarea name="config" style="min-height:250px">${E(JSON.stringify(item?.config||{name:item?.name||"",description:item?.description||"",sections:[]},null,2))}</textarea></div>
-      <button>Lưu biểu mẫu</button>
+      <div class="field"><label>Email nhận hồ sơ</label><input name="recipient_email" type="email" value="${E(item?.recipient_email||"nhahanngu.vn@gmail.com")}"></div></div>
+      <div class="builder-toolbar"><div><b>Câu hỏi & nhóm nội dung</b><div class="muted small">Thêm, sửa, xóa và sắp xếp trực tiếp — không cần JSON.</div></div><button type="button" id="addSectionBtn">+ Thêm nhóm</button></div>
+      <div id="builderSections"></div><div class="builder-save"><button>Lưu biểu mẫu</button></div>
     </form>`);
-
-  adminFormEditor.onsubmit=async e=>{
-    e.preventDefault();
-    const f=new FormData(e.target);
-    try{
-      const body={
-        id:f.get("id"),
-        name:f.get("name"),
-        prefix:f.get("prefix"),
-        description:f.get("description"),
-        audience:f.get("audience"),
-        min_age:f.get("min_age")?Number(f.get("min_age")):null,
-        recipient_email:f.get("recipient_email"),
-        config:JSON.parse(f.get("config"))
-      };
-
-      await api(item?"/api/admin/forms/"+encodeURIComponent(item.id):"/api/admin/forms",{
-        method:item?"PUT":"POST",body
-      });
-
-      closeModal();toast("Đã lưu biểu mẫu");forms();
-    }catch(err){alert("Không thể lưu: "+err.message)}
+  const renderBuilder=()=>{
+    builderSections.innerHTML=cfg.sections.map((sec,si)=>`<section class="builder-section"><div class="builder-section-head"><input class="section-title" data-si="${si}" value="${E(sec.title||`Nhóm ${si+1}`)}" aria-label="Tên nhóm"><div><button type="button" class="secondary mini" data-up-sec="${si}">↑</button><button type="button" class="secondary mini" data-down-sec="${si}">↓</button><button type="button" class="danger mini" data-del-sec="${si}">Xóa nhóm</button></div></div>
+      <div class="builder-fields">${(sec.fields||[]).map((f,fi)=>`<div class="builder-field" data-si="${si}" data-fi="${fi}"><div class="drag-handle">⋮⋮</div><div class="field grow"><label>Câu hỏi</label><input data-prop="label" value="${E(f.label||'')}"></div><div class="field type"><label>Loại</label><select data-prop="type">${['text','textarea','email','date','select','checkbox','file'].map(t=>`<option value="${t}" ${f.type===t?'selected':''}>${({text:'Văn bản',textarea:'Đoạn dài',email:'Email',date:'Ngày',select:'Lựa chọn',checkbox:'Xác nhận',file:'Tải tệp'})[t]}</option>`).join('')}</select></div><div class="field key"><label>Mã trường</label><input data-prop="key" value="${E(f.key||`field_${si+1}_${fi+1}`)}"></div><label class="required-toggle"><input type="checkbox" data-prop="required" ${f.required?'checked':''}> Bắt buộc</label><div class="field options ${f.type==='select'?'':'is-hidden'}"><label>Lựa chọn (mỗi dòng)</label><textarea data-prop="options">${E((f.options||[]).join('\n'))}</textarea></div><div class="field-actions"><button type="button" class="secondary mini" data-up="${fi}">↑</button><button type="button" class="secondary mini" data-down="${fi}">↓</button><button type="button" class="danger mini" data-del="${fi}">Xóa</button></div></div>`).join('')}</div><button type="button" class="secondary add-field" data-add="${si}">+ Thêm câu hỏi</button></section>`).join('')||'<div class="empty-state">Chưa có nhóm câu hỏi. Hãy thêm nhóm đầu tiên.</div>';
+    builderSections.querySelectorAll('.section-title').forEach(el=>el.oninput=()=>cfg.sections[+el.dataset.si].title=el.value);
+    builderSections.querySelectorAll('.builder-field').forEach(el=>{const si=+el.dataset.si,fi=+el.dataset.fi,f=cfg.sections[si].fields[fi];el.querySelectorAll('[data-prop]').forEach(inp=>inp.onchange=inp.oninput=()=>{const k=inp.dataset.prop;if(k==='required')f[k]=inp.checked;else if(k==='options')f[k]=inp.value.split('\n').map(x=>x.trim()).filter(Boolean);else f[k]=inp.value;if(k==='type')renderBuilder();});});
+    builderSections.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{const si=+b.dataset.add;(cfg.sections[si].fields ||= []).push({key:`field_${Date.now()}`,label:'Câu hỏi mới',type:'text',required:false});renderBuilder();});
+    builderSections.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const el=b.closest('.builder-field');cfg.sections[+el.dataset.si].fields.splice(+el.dataset.fi,1);renderBuilder();});
+    builderSections.querySelectorAll('[data-up],[data-down]').forEach(b=>b.onclick=()=>{const el=b.closest('.builder-field'),a=cfg.sections[+el.dataset.si].fields,i=+el.dataset.fi,j=b.dataset.up!==undefined?i-1:i+1;if(j>=0&&j<a.length){[a[i],a[j]]=[a[j],a[i]];renderBuilder();}});
+    builderSections.querySelectorAll('[data-del-sec]').forEach(b=>b.onclick=()=>{cfg.sections.splice(+b.dataset.delSec,1);renderBuilder();});
+    builderSections.querySelectorAll('[data-up-sec],[data-down-sec]').forEach(b=>b.onclick=()=>{const i=+(b.dataset.upSec??b.dataset.downSec),j=b.dataset.upSec!==undefined?i-1:i+1;if(j>=0&&j<cfg.sections.length){[cfg.sections[i],cfg.sections[j]]=[cfg.sections[j],cfg.sections[i]];renderBuilder();}});
   };
+  addSectionBtn.onclick=()=>{cfg.sections.push({title:`Nhóm ${cfg.sections.length+1}`,fields:[]});renderBuilder();}; renderBuilder();
+  adminFormEditor.onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);try{cfg.name=f.get('name');cfg.description=f.get('description');const body={id:f.get('id'),name:f.get('name'),prefix:f.get('prefix'),description:f.get('description'),audience:f.get('audience'),min_age:f.get('min_age')?Number(f.get('min_age')):null,recipient_email:f.get('recipient_email'),config:cfg};await api(item?"/api/admin/forms/"+encodeURIComponent(item.id):"/api/admin/forms",{method:item?"PUT":"POST",body});closeModal();toast("Đã lưu biểu mẫu");await forms();}catch(err){toast("Không thể lưu: "+err.message)}};
 }
 
 window.editForm=async id=>{
@@ -943,6 +962,9 @@ window.editForm=async id=>{
   if(item) formEditor(item);
 };
 
+
+window.duplicateForm=async id=>{id=decodeURIComponent(id);const d=await api("/api/admin/forms");const item=d.items.find(x=>x.id===id);if(!item)return;const copy=structuredClone(item);copy.id="";copy.name=(copy.name||"")+" (Bản sao)";formEditor(copy);};
+window.deleteForm=async id=>{id=decodeURIComponent(id);if(!confirm("Xóa biểu mẫu này? Hồ sơ đã gửi sẽ được giữ nguyên."))return;try{await api("/api/admin/forms/"+encodeURIComponent(id),{method:"DELETE"});toast("Đã xóa biểu mẫu");await forms();}catch(err){toast("Không thể xóa: "+err.message)}};
 /* =========================
    CERTIFICATES
 ========================= */
@@ -1199,7 +1221,7 @@ async function settingsPage(){
           <div class="field"><label>Slogan</label><input name="brand_slogan" value="${txt("brand_slogan","Kết nối tri thức • Mở lối tương lai")}"></div>
           <div class="field"><label>Tiêu đề Hero</label><input name="hero_title" value="${txt("hero_title")}"></div>
           <div class="field"><label>Mô tả Hero</label><textarea name="hero_text">${txt("hero_text")}</textarea></div>
-          <div class="field"><label>Ảnh Hero (URL)</label><input name="hero_cover_url" value="${txt("hero_cover_url","/assets/nhn-logo.jpg")}"></div>
+          <div class="field"><label>Ảnh Hero</label><div class="upload-control"><input name="hero_cover_file" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><input name="hero_cover_url" type="hidden" value="${txt("hero_cover_url","/assets/nhn-logo.jpg")}">${values.hero_cover_url?`<img class="upload-preview" src="${E(values.hero_cover_url)}" alt="Ảnh Hero hiện tại">`:""}<small>Tải ảnh trực tiếp từ thiết bị. Không cần URL.</small></div></div>
         </div>
         <div class="card"><h2>Liên hệ & mạng xã hội</h2>
           <div class="field"><label>Email</label><input name="receiver_email" type="email" value="${txt("receiver_email","nhahanngu.vn@gmail.com")}"></div>
@@ -1230,6 +1252,8 @@ async function settingsPage(){
   settingsForm.onsubmit=async e=>{
     e.preventDefault();const f=new FormData(e.target);
     const items=Object.fromEntries(f);
+    const heroFile=f.get("hero_cover_file"); if(heroFile&&heroFile.size){const fd=new FormData();fd.append("file",heroFile);fd.append("visibility","public");const up=await api("/api/admin/upload",{method:"POST",body:fd});items.hero_cover_url=fileUrl(up.id);}
+    delete items.hero_cover_file;
     items.maintenance_mode=e.target.maintenance_mode.checked;
     items.max_upload_mb=Number(items.max_upload_mb||10);
     await api("/api/admin/settings",{method:"PUT",body:{items}});
@@ -1337,6 +1361,7 @@ async function route(){
     if(h==="home") return home();
     if(h==="activities") return activities();
     if(h==="news") return news();
+    if(h.startsWith("news/")) return newsDetail(decodeURIComponent(h.slice(5)));
     if(h==="about") return about();
     if(h==="support") return support();
     if(h==="lookup") return lookup();

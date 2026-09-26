@@ -287,6 +287,13 @@ export async function adminRoute(request,env,url){
     await audit(env,request,user,"Tạo biểu mẫu","form",idForm,{name:body.name});return json({ok:true,id:idForm});
   }
   const formMatch=p.match(/^\/api\/admin\/forms\/([^/]+)$/);
+  if(formMatch&&request.method==="DELETE"){
+    const deny=requirePermission(user,"form.manage");if(deny)return deny;
+    const fid=decodeURIComponent(formMatch[1]);
+    const used=await env.DB.prepare("SELECT COUNT(*) c FROM submissions WHERE form_id=?").bind(fid).first();
+    if(Number(used?.c||0)>0){await env.DB.prepare("UPDATE forms SET enabled=0,updated_at=CURRENT_TIMESTAMP,updated_by=? WHERE id=?").bind(user.id,fid).run();await audit(env,request,user,"Lưu trữ biểu mẫu","form",fid,{submissions:Number(used.c)});return json({ok:true,archived:true});}
+    await env.DB.prepare("DELETE FROM forms WHERE id=?").bind(fid).run();await audit(env,request,user,"Xóa biểu mẫu","form",fid);return json({ok:true});
+  }
   if(formMatch&&request.method==="PUT"){
     const deny=requirePermission(user,"form.manage");if(deny)return deny;
     const fid=decodeURIComponent(formMatch[1]),body=await readJson(request)||{};
