@@ -273,6 +273,28 @@ export async function adminRoute(request,env,url){
     return json({ok:true});
   }
 
+  // Hero image: upload + persist setting atomically from the Admin Settings screen.
+  // This intentionally requires settings.manage (not file.manage) because it is a branding setting.
+  if(p==="/api/admin/settings/hero"&&request.method==="POST"){
+    const deny=requirePermission(user,"settings.manage");if(deny)return deny;
+    const fd=await request.formData(),file=fd.get("file");
+    if(!file||typeof file!=="object"||!("size" in file))return json({error:"FILE_REQUIRED"},400);
+    const maxMb=Number(await setting(env,"max_upload_mb",10));
+    if(file.size>maxMb*1024*1024)return json({error:"FILE_TOO_LARGE"},400);
+    const allowed=new Set(["image/jpeg","image/png","image/webp","image/gif"]);
+    if(!allowed.has(file.type||""))return json({error:"FILE_TYPE_NOT_ALLOWED"},400);
+    const idF=uid("file"),safe=String(file.name||"hero-image").replace(/[^\p{L}\p{N}._-]+/gu,"_").slice(0,120);
+    const key=`public/branding/${new Date().getUTCFullYear()}/${idF}/${safe}`;
+    await env.FILES.put(key,file.stream(),{httpMetadata:{contentType:file.type||"application/octet-stream"}});
+    await env.DB.prepare("INSERT INTO files(id,owner_user_id,r2_key,filename,mime,size,visibility) VALUES(?,?,?,?,?,?,?)")
+      .bind(idF,user.id,key,safe,file.type||"",file.size||0,"public").run();
+    const urlValue=`/api/files/${encodeURIComponent(idF)}`;
+    await env.DB.prepare("INSERT INTO settings(key,value_json,updated_by) VALUES('hero_cover_url',?,?) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json,updated_at=CURRENT_TIMESTAMP,updated_by=excluded.updated_by")
+      .bind(JSON.stringify(urlValue),user.id).run();
+    await audit(env,request,user,"Cập nhật ảnh Hero","settings","hero_cover_url",{file_id:idF,filename:safe});
+    return json({ok:true,id:idF,url:urlValue});
+  }
+
   if(p==="/api/admin/forms"&&request.method==="GET"){
     const deny=requirePermission(user,"form.view");if(deny)return deny;
     const rs=await env.DB.prepare("SELECT id,name,prefix,description,audience,min_age,enabled,recipient_email,version,config_json,updated_at FROM forms ORDER BY rowid").all();

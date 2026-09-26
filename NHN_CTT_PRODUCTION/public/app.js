@@ -1236,14 +1236,34 @@ async function settingsPage(){
       <button style="margin-top:18px">Lưu cài đặt</button>
     </form>`);
   settingsForm.onsubmit=async e=>{
-    e.preventDefault();const f=new FormData(e.target);
-    const items=Object.fromEntries(f);
-    const heroFile=f.get("hero_cover_file"); if(heroFile&&heroFile.size){const fd=new FormData();fd.append("file",heroFile);fd.append("visibility","public");const up=await api("/api/admin/upload",{method:"POST",body:fd});items.hero_cover_url=fileUrl(up.id);}
-    delete items.hero_cover_file;
-    items.maintenance_mode=e.target.maintenance_mode.checked;
-    items.max_upload_mb=Number(items.max_upload_mb||10);
-    await api("/api/admin/settings",{method:"PUT",body:{items}});
-    toast("Đã lưu cài đặt ứng dụng"); state.config=await api("/api/config");
+    e.preventDefault();
+    const form=e.target,saveBtn=form.querySelector('button[type="submit"],button:not([type])');
+    const oldLabel=saveBtn?.textContent||"Lưu cài đặt";
+    if(saveBtn){saveBtn.disabled=true;saveBtn.textContent="Đang lưu…";}
+    try{
+      const f=new FormData(form);
+      const items=Object.fromEntries(f);
+      const heroFile=f.get("hero_cover_file");
+      delete items.hero_cover_file;
+      // Ảnh Hero dùng endpoint riêng: upload R2 + ghi setting trong cùng một request.
+      // Nhờ vậy không còn tình trạng upload thành công nhưng hero_cover_url không được lưu.
+      if(heroFile&&heroFile.size){
+        const fd=new FormData();fd.append("file",heroFile);
+        const hero=await api("/api/admin/settings/hero",{method:"POST",body:fd});
+        items.hero_cover_url=hero.url;
+        const hidden=form.querySelector('[name="hero_cover_url"]');if(hidden)hidden.value=hero.url;
+        const preview=form.querySelector('.upload-preview');if(preview)preview.src=hero.url;
+      }
+      items.maintenance_mode=form.maintenance_mode.checked;
+      items.max_upload_mb=Number(items.max_upload_mb||10);
+      await api("/api/admin/settings",{method:"PUT",body:{items}});
+      state.config=await api("/api/config");
+      toast("Đã lưu cài đặt ứng dụng");
+    }catch(err){
+      toast("Không lưu được: "+err.message);
+    }finally{
+      if(saveBtn){saveBtn.disabled=false;saveBtn.textContent=oldLabel;}
+    }
   };
 }
 
@@ -1301,7 +1321,8 @@ async function adminRoute(h){
     return;
   }
 
-  accountBtn.textContent=state.user.full_name||state.user.email||"Tài khoản";
+  accountBtn.textContent="☰";
+  accountBtn.title="Mở trang quản trị";
 
   try{
     if(h==="admin/dashboard") return dashboard();
@@ -1408,7 +1429,8 @@ async function init(){
   state.user=me.user||null;
 
   if(state.user)
-    accountBtn.textContent=state.user.full_name||state.user.email||"Tài khoản";
+    accountBtn.textContent="☰";
+  accountBtn.title="Mở trang quản trị";
 
   route();
 }
