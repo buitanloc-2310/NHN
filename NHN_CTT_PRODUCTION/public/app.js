@@ -116,7 +116,7 @@ async function home(){
         <a class="btn secondary" href="#lookup">Tra cứu Giấy chứng nhận</a>
       </div>
     </div>
-    <img src="${E(heroCover)}" alt="Nhà Hán Ngữ">
+    <img src="${E(heroCover)}" alt="Nhà Hán Ngữ" onerror="this.onerror=null;this.src='/assets/nhn-logo-transparent.png';">
   </section>
 
   <section class="section soft-section">
